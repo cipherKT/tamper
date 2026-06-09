@@ -1,0 +1,5 @@
+POST /api/account/email HTTP/1.1
+Host: www.scribblemaps.com
+Content-Type: application/x-www-form-urlencoded
+
+newEmail=user%40x.com&newEmailRepeat=user%40x.com

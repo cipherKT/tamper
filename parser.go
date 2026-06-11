@@ -20,7 +20,7 @@ type ParsedRequest struct {
 	Headers  map[string][]string
 	Body     string
 	BodyType string
-	Fields   map[string]string
+	Fields   map[string]any
 }
 
 func ParseRequestFile(path string) (ParsedRequest, error) {
@@ -64,12 +64,12 @@ func ParseRequestFile(path string) (ParsedRequest, error) {
 	if strings.Contains(contentType, "application/json") {
 		parsedRequest.BodyType = "json"
 
-		var bodyMap map[string]interface{}
+		var bodyMap map[string]any
 		err = json.Unmarshal([]byte(parsedRequest.Body), &bodyMap)
 		if err != nil {
 			return ParsedRequest{}, err
 		}
-		parsedRequest.Fields = make(map[string]string)
+		parsedRequest.Fields = make(map[string]any)
 		for k, v := range bodyMap {
 			parsedRequest.Fields[k] = fmt.Sprintf("%v", v)
 		}
@@ -80,7 +80,7 @@ func ParseRequestFile(path string) (ParsedRequest, error) {
 		if err != nil {
 			return ParsedRequest{}, err
 		}
-		parsedRequest.Fields = make(map[string]string)
+		parsedRequest.Fields = make(map[string]any)
 		for k, v := range formValues {
 			parsedRequest.Fields[k] = v[0]
 		}
@@ -89,19 +89,4 @@ func ParseRequestFile(path string) (ParsedRequest, error) {
 	}
 
 	return *parsedRequest, nil
-}
-
-func main() {
-	req, err := ParseRequestFile("test.txt")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("Method:", req.Method)
-	fmt.Println("Scheme:", req.Scheme)
-	fmt.Println("Host:", req.Host)
-	fmt.Println("Path:", req.Path)
-	fmt.Println("BodyType:", req.BodyType)
-	fmt.Println("Fields:", req.Fields)
-	fmt.Println("Body:", req.Body)
 }

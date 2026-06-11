@@ -7,7 +7,7 @@ type Payload struct {
 	Apply       func(r ParsedRequest, attackerDomain string) ParsedRequest
 }
 
-var payloads = []Payload{
+var Payloads = []Payload{
 	{
 		Name:        "X-Forwarded-Host",
 		Mode:        "header",

@@ -27,4 +27,6 @@ func main() {
 
 	body := RebuildBody(req)
 	fmt.Println("Rebuilt body: ", body)
+
+	RunInteractive(req, "evil.ktcipher.com")
 }

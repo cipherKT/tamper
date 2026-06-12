@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-func RunInteractive(req ParsedRequest, attackerDomain string) {
+func RunInteractive(req ParsedRequest, attackerDomain string, payloads []Payload, verbose bool) {
 	scanner := bufio.NewScanner(os.Stdin)
-	total := len(Payloads)
+	total := len(payloads)
 
 	reporter, err := NewReporter(req)
 	if err != nil {
@@ -20,14 +20,23 @@ func RunInteractive(req ParsedRequest, attackerDomain string) {
 	interesting := 0
 	noImpact := 0
 
-	for i, payload := range Payloads {
+	for i, payload := range payloads {
 		modified := payload.Apply(req, attackerDomain)
 
-		fmt.Printf("\n--- Payload %d/%d — %s ---\n", i+1, total, payload.Name)
-		fmt.Printf("Description: %s\n", payload.Description)
-		fmt.Printf("Mode: %s\n\n", payload.Mode)
-		fmt.Println("Request to send:")
-		PrintRequest(modified)
+		printBanner()
+		fmt.Printf(" Target : %s %s://%s%s\n", req.Method, req.Scheme, req.Host, req.Path)
+		fmt.Printf(" Domain : %s\n", attackerDomain)
+		fmt.Println(strings.Repeat("─", 58))
+		fmt.Printf("\n [%d/%d] %s (%s)\n", i+1, total, payload.Name, payload.Mode)
+		fmt.Printf(" %s\n\n", payload.Description)
+
+		if verbose {
+			fmt.Println(strings.Repeat("─", 58))
+			fmt.Println(" Request:")
+			fmt.Println(strings.Repeat("─", 58))
+			PrintRequest(modified)
+			fmt.Println(strings.Repeat("─", 58))
+		}
 
 		fmt.Print("\n[*] Press Enter to send, q to quit: ")
 		scanner.Scan()
@@ -40,14 +49,19 @@ func RunInteractive(req ParsedRequest, attackerDomain string) {
 
 		statusCode, respBody, err := SendRequest(modified)
 		if err != nil {
-			fmt.Println("Error sending request:", err)
+			fmt.Println(" Error sending request:", err)
 			continue
 		}
 
-		fmt.Printf("[*] Response: %d\n", statusCode)
-		fmt.Printf("[*] Body: %s\n", respBody)
+		printBanner()
+		fmt.Printf(" Target : %s %s://%s%s\n", req.Method, req.Scheme, req.Host, req.Path)
+		fmt.Printf(" Domain : %s\n", attackerDomain)
+		fmt.Println(strings.Repeat("─", 58))
+		fmt.Printf("\n [%d/%d] %s (%s)\n\n", i+1, total, payload.Name, payload.Mode)
+		fmt.Printf(" Response : %d\n", statusCode)
+		fmt.Printf(" Body     : %s\n\n", respBody)
 
-		fmt.Print("Result (y/n/q with optional notes after dot): ")
+		fmt.Print(" Result (y/n/q with optional notes after dot): ")
 		scanner.Scan()
 		input = strings.TrimSpace(scanner.Text())
 		if input == "q" {
@@ -69,7 +83,7 @@ func RunInteractive(req ParsedRequest, attackerDomain string) {
 			notes = strings.TrimSpace(input[idx+1:])
 		}
 
-		fmt.Printf("[*] Logged: %s", result)
+		fmt.Printf(" [*] Logged: %s", result)
 		if notes != "" {
 			fmt.Printf(" - %s", notes)
 		}

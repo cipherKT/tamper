@@ -31,11 +31,17 @@ func UpdateContentLength(req *ParsedRequest, body string) {
 	req.Headers["Content-Length"] = []string{strconv.Itoa(len(body))}
 }
 
-func PrintRequest(req ParsedRequest) {
-	fmt.Printf("%s %s HTTP/1.1\n", req.Method, req.Path)
-	fmt.Printf("Host: %s\n", req.Host)
+func FormatRequest(req ParsedRequest) string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("%s %s HTTP/1.1\n", req.Method, req.Path))
+	sb.WriteString(fmt.Sprintf("Host: %s\n", req.Host))
 	for k, v := range req.Headers {
-		fmt.Printf("%s: %s\n", k, strings.Join(v, ", "))
+		sb.WriteString(fmt.Sprintf("%s: %s\n", k, strings.Join(v, ", ")))
 	}
-	fmt.Printf("\n%s\n", req.Body)
+	sb.WriteString(fmt.Sprintf("\n%s", req.Body))
+	return sb.String()
+}
+
+func PrintRequest(req ParsedRequest) {
+	fmt.Println(FormatRequest(req))
 }

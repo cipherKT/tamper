@@ -12,8 +12,7 @@
 **Interactive request manipulation tool for testing sensitive account-update flows**
 
 [![Go](https://img.shields.io/badge/Go-1.22-00ADD8?style=flat-square&logo=go)](https://golang.org)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Author](https://img.shields.io/badge/author-cipherKT-blueviolet?style=flat-square)](https://twitter.com/cipherKT)
+[![Author](https://img.shields.io/badge/author-cipherKT-blueviolet?style=flat-square)](https://twitter.com/r00t3d_kt)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey?style=flat-square)]()
 
 </div>
@@ -272,7 +271,7 @@ tamper/
 
 **cipherKT** — bug bounty hunter
 
-[![Twitter](https://img.shields.io/badge/twitter-@cipherKT-1DA1F2?style=flat-square&logo=twitter)](https://twitter.com/cipherKT)
+[![Twitter](https://img.shields.io/badge/twitter-@r00t3d_kt-1DA1F2?style=flat-square&logo=twitter)](https://twitter.com/r00t3d_kt)
 [![GitHub](https://img.shields.io/badge/github-cipherKT-181717?style=flat-square&logo=github)](https://github.com/cipherKT)
 
 ---

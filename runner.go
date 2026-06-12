@@ -28,8 +28,13 @@ func RunInteractive(req ParsedRequest, attackerDomain string) {
 			return
 		}
 
-		// sending logic goes here later
-		fmt.Println("[*] Sent. Response code: (not implemented yet)")
+		statusCode, respBody, err := SendRequest(modified)
+		if err != nil {
+			fmt.Println("Error sending request: ", err)
+			continue
+		}
+		fmt.Printf("[*] Response: %d\n", statusCode)
+		fmt.Printf("[*] body: %s\n", respBody)
 
 		fmt.Print("Result (y/n/q with optional notes after dot): ")
 		scanner.Scan()

@@ -1,20 +1,12 @@
-POST /api/account/email HTTP/1.1
-Host: www.scribblemaps.com
-Connection: close
-Content-Length: 83
-sec-ch-ua-platform: "Linux"
+GET / HTTP/1.1
+Host: console-ds.alipayplus.com
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:151.0) Gecko/20100101 Firefox/151.0
+Accept: */*
 Accept-Language: en-US,en;q=0.9
-Accept: application/json, text/plain, */*
-sec-ch-ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"
-Content-Type: application/json;charset=UTF-8
-sec-ch-ua-mobile: ?0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36
-Origin: https://www.scribblemaps.com
-Sec-Fetch-Site: same-origin
-Sec-Fetch-Mode: cors
-Sec-Fetch-Dest: empty
-Referer: https://www.scribblemaps.com/create
 Accept-Encoding: gzip, deflate, br, zstd
-Cookie: sm_sessionId=1dc68d2c-3b29-424a-99c7-0f8c84deb849; cf_clearance=SSkwt3ayraeOM_ff7v_.f84AOVMOUj9AFeV59b2_weA-1780505593-1.2.1.1-N0u_dDjNfDqA8qKiilqOLugWPMJHGb3__fp4a56GgLnYrVkaXUdCzr9hFeHtddoRtIoNRhGfIFfjZEZym4aRKPEEoV8QoqxY1I96AmGq6.799yUOe3MpjtxyYLi1KBoRQu72cEgnn6Ko_W8QKGHI6ew4lLl6k.ajyIynAZv48E0XoFSbZGQX.MevK6vPOkbQOGkpRRjAilEq_xNN0zIrEUJ3sdO0IZp5I6k5gqE_kNhfWxqiLwgdccDe33_lAJ2AhDxPovjdiIcn0kpuHhKvY8s6TouiHEhjJMEPjqRnlSK7K0pfulF0ABnPVK7eKHU8CLlfOiM6aNGNr3wX0DPkvIe.csICA66tGoqoxiSdjYfSPOANpRSqPhp9X.Z4XGpTFfTlOtZ_wbxPQKEYksCTaHKxwrSgbUxTAxwt4G6uRl8; g_state={"i_l":0,"i_ll":1780573213081,"i_b":"RBFUlHTan9suUgnZgjrz7Lzw6/vhqtTY6uNuWnSaLbs","i_e":{"enable_itp_optimization":0},"i_et":1780483043932}; sm_lang=de; ScribbleMaps_Auth=CfDJ8LfwLJdTd4VHkKyqsFLQ6r-0X6VqdZVShPu8913CDgHP-hvbxx0qvZ-yTFt_Ud2MeY1k8bfZM__eybpL9T6qrUzIJzTkHgbQ0WMHODuxRzinb2Yo7f01OxZDl7xR3tzl0p8tWGxxtDbWiy_vvoC34i1MkIrWzfvnDXnwAsXQOJIppRJ7buwVA_ZylGW4Fu8tZJg2dCMZK-L-K7WQaVVvAsYUzj1qbIdlnJ1tXsCEh9mhtO2cvoj4I8Si4Z1c2N2gAQn_nuk7X6HFZ4LV0nW5O9hvzTDbRhDqZKGJBLF9pIUSRRCS6llou3G6vGeuo0e4SMKWtog3n2BD-79zt6d6uoSusf3kjDa3J8QJVu7UVsm3iusN0b8CdcVRMnvoRkQKwqpFdFVLeTW2xgj53kmtjogorRd-ejGbCAhn-nIEAZZQ0obS5Tp4BZAYx3belWWTEzcvqhyOxnX_AM5F5txxnxQI4KBN-ONH4n-SiElgxdw3XcNWV-KVnycK5RYNb7nxa41K4PAZ5LHRK17a7mbYw8Zn7W2RXwNoeQPbBiHV_r-pc9-7H3X3ASzB6o1imjOZUESDq1TTUlMQtARpmi-qSf0oyaFVT7HdmGZaaOpZ5_D4Yf24Z-pFzXcvw9hmAvEILEj6yVLvVhY4tWZx-2dHBT690O-Z5mxIFiobZLinw6IBlglm2YMTfrPbXAD0hnlWQ7yEU_d6VkTot-uY2RBfRo_thCzzlA5VMgWsC5z5oWOi; NPS_520907a4_last_seen=1780573255514
+Connection: keep-alive
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Site: same-origin
+Priority: u=4
 
-{"newEmail":"cipherr00t3d+1@gmail.com","newEmailRepeat":"cipherr00t3d+1@gmail.com"}

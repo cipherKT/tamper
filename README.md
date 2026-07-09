@@ -11,7 +11,8 @@
 
 **Interactive request manipulation tool for testing sensitive account-update flows**
 
-[![Go](https://img.shields.io/badge/Go-1.22-00ADD8?style=flat-square&logo=go)](https://golang.org)
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go)](https://golang.org)
+[![HTTP/2](https://img.shields.io/badge/HTTP%2F2-supported-success?style=flat-square)]()
 [![Author](https://img.shields.io/badge/author-r00t3d_kt-blueviolet?style=flat-square)](https://twitter.com/r00t3d_kt)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey?style=flat-square)]()
 
@@ -21,7 +22,7 @@
 
 ## what is tamper?
 
-`tamper` is a single-binary CLI tool for testing account-update endpoints — email change, password reset, username update, mobile number change, or anything with a similar request/confirmation flow.
+`tamper` is a single-binary CLI tool for testing account-update endpoints — email change, password reset, username update, mobile number change, or anything with a similar request/confirmation flow. Supports both **HTTP/1.1** and **HTTP/2** targets out of the box.
 
 You give it a raw HTTP request file (from Burp or Caido), pick an attack mode, and it walks you through payloads one at a time — sending each request, showing the response, and waiting for you to check your inbox and log the result. Everything gets written to a markdown report automatically.
 
@@ -79,6 +80,16 @@ tamper -r <request file> [flags]
 
 ```
 POST /api/account/email HTTP/1.1
+Host: target.com
+Content-Type: application/json
+
+{"email":"victim@gmail.com"}
+```
+
+HTTP/2 requests work too — both formats are auto-detected:
+
+```
+POST /api/account/email HTTP/2
 Host: target.com
 Content-Type: application/json
 
@@ -225,7 +236,9 @@ tamper is endpoint-agnostic. Works on any flow with a similar request/confirmati
 
 ## request file format
 
-Standard raw HTTP format exported from Burp Suite or Caido. Blank line between headers and body is required:
+Standard raw HTTP format exported from Burp Suite or Caido. Blank line between headers and body is required.
+
+**HTTP/1.1:**
 
 ```
 POST /reset HTTP/1.1
@@ -236,18 +249,33 @@ Cookie: session=abc123
 {"email":"victim@gmail.com"}
 ```
 
-Both JSON and `application/x-www-form-urlencoded` bodies are supported. Fields are auto-detected — no configuration needed.
+**HTTP/2 (standard):**
 
----
+```
+POST /reset HTTP/2
+Host: target.com
+Content-Type: application/json
+Cookie: session=abc123
 
-## todo (v0.2.0)
+{"email":"victim@gmail.com"}
+```
 
-- [ ] `--repeat N` flag — fire same request N times for rate limit testing
-- [ ] `--delay` flag — configurable delay between repeat requests
-- [ ] `--proxy` flag — route through Burp / Caido
-- [ ] token entropy analysis mode
-- [ ] `--resume` — pick up from a partial report
-- [ ] cookie jar to persist session across payloads
+**HTTP/2 (Burp pseudo-header format):**
+
+```
+:method: POST
+:path: /reset
+:authority: target.com
+:scheme: https
+Content-Type: application/json
+Cookie: session=abc123
+
+{"email":"victim@gmail.com"}
+```
+
+All three formats are auto-detected. Both JSON and `application/x-www-form-urlencoded` bodies are supported. Fields are auto-detected — no configuration needed.
+
+Compressed responses (`gzip`, `deflate`) are automatically decompressed.
 
 ---
 
@@ -256,10 +284,10 @@ Both JSON and `application/x-www-form-urlencoded` bodies are supported. Fields a
 ```
 tamper/
 ├── main.go       — entrypoint, flags, payload filtering
-├── parser.go     — raw HTTP request file → ParsedRequest struct
+├── parser.go     — raw HTTP request file → ParsedRequest (HTTP/1.1 + HTTP/2)
 ├── payloads.go   — all payload definitions
 ├── runner.go     — interactive send loop
-├── sender.go     — HTTP client
+├── sender.go     — HTTP/1.1 and HTTP/2 client with response decompression
 ├── reporter.go   — markdown report writer
 ├── helpers.go    — RebuildBody, FormatRequest, UpdateContentLength
 └── banner.go     — ASCII banner, screen clear

@@ -33,7 +33,7 @@ func UpdateContentLength(req *ParsedRequest, body string) {
 
 func FormatRequest(req ParsedRequest) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s %s HTTP/1.1\n", req.Method, req.Path))
+	sb.WriteString(fmt.Sprintf("%s %s %s\n", req.Method, req.Path, req.Proto))
 	sb.WriteString(fmt.Sprintf("Host: %s\n", req.Host))
 	for k, v := range req.Headers {
 		sb.WriteString(fmt.Sprintf("%s: %s\n", k, strings.Join(v, ", ")))

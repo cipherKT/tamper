@@ -1,0 +1,11 @@
+POST /forgot-password HTTP/1.1
+Host: localhost:8000
+Content-Type: application/json
+Content-Length: 49
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+Accept: application/json
+Accept-Encoding: gzip, deflate
+Origin: http://localhost:8000
+Cookie: session=abc123test
+
+{"email":"victim@example.com","token":"reset123"}

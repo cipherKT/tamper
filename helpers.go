@@ -190,3 +190,16 @@ func isEmailField(key string) bool {
 	return strings.Contains(k, "email") || strings.Contains(k, "mail")
 }
 
+// detectScheme returns "http" for localhost/127.0.0.1 targets,
+// and "https" for everything else.
+func detectScheme(host string) string {
+	h := strings.ToLower(host)
+	// Strip port if present
+	if idx := strings.LastIndex(h, ":"); idx != -1 {
+		h = h[:idx]
+	}
+	if h == "localhost" || h == "127.0.0.1" || h == "::1" {
+		return "http"
+	}
+	return "https"
+}

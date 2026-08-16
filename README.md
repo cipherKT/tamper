@@ -117,6 +117,24 @@ tamper -r request.txt -e evil@attacker.com -v
 
 ---
 
+## local testing
+
+`echo_server.py` is a zero-dependency test server that echoes back the method, headers, and body of every request as JSON — handy for verifying payloads locally before pointing tamper at a real target.
+
+```bash
+python3 echo_server.py            # listens on http://127.0.0.1:8000
+```
+
+Then point a request file at it (any local test request works, e.g. `test_local.txt`):
+
+```bash
+tamper -r test_local.txt -e evil@attacker.com
+```
+
+Every response confirms exactly what tamper sent: the echo body shows whether a payload's header/field manipulation actually landed on the wire.
+
+---
+
 ## interactive flow
 
 ```
@@ -303,6 +321,7 @@ tamper/
 ├── sender.go     — HTTP/1.1 and HTTP/2 client with response decompression
 ├── reporter.go   — markdown report writer
 ├── helpers.go    — RebuildBody, FormatRequest, UpdateContentLength
+├── echo_server.py — local echo server for testing payloads
 └── banner.go     — ASCII banner, screen clear
 ```
 

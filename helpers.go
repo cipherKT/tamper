@@ -183,3 +183,10 @@ func InjectValue(key, attackerEmail, attackerDomain string) string {
 	return "evil@" + attackerDomain
 }
 
+// isEmailField returns true if the field key looks like it carries an email address.
+// Email-injection payloads use this to skip unrelated fields like token, password, username.
+func isEmailField(key string) bool {
+	k := strings.ToLower(key)
+	return strings.Contains(k, "email") || strings.Contains(k, "mail")
+}
+

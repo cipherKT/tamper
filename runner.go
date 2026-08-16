@@ -40,7 +40,15 @@ func RunInteractive(req ParsedRequest, attackerDomain, attackerEmail string, pay
 		fmt.Println(drawProgress(i, total))
 		fmt.Println(strings.Repeat("─", 58))
 		fmt.Printf("\n [%d/%d] %s (%s)\n", i+1, total, payload.Name, payload.Mode)
-		fmt.Printf(" %s\n\n", payload.Description)
+		fmt.Printf(" %s\n", payload.Description)
+
+		// Show what exactly will change before sending
+		if payload.Preview != nil {
+			fmt.Println()
+			fmt.Println(" \033[2mPayload preview:\033[0m")
+			fmt.Println(payload.Preview(req, attackerDomain, attackerEmail))
+		}
+		fmt.Println()
 
 		if verbose {
 			fmt.Println(strings.Repeat("─", 58))

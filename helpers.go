@@ -23,10 +23,10 @@ func RebuildBody(req ParsedRequest) string {
 			// element as a separate key=value pair instead of stringifying the slice.
 			if slice, ok := v.([]any); ok {
 				for _, elem := range slice {
-					values.Add(k, fmt.Sprintf("%v", elem))
+					values.Add(k, anyToString(elem))
 				}
 			} else {
-				values.Set(k, fmt.Sprintf("%v", v))
+				values.Set(k, anyToString(v))
 			}
 		}
 		return values.Encode()
@@ -35,6 +35,80 @@ func RebuildBody(req ParsedRequest) string {
 	}
 }
 
+// ── Preview helpers ───────────────────────────────────────────────────────────
+
+// PreviewHeader formats a header injection as:
+//   adding   X-Forwarded-Host: evil.com
+//   replacing  Host: original.com  →  Host: evil.com
+func PreviewHeader(action, key, before, after string) string {
+	arrow := "\033[33m→\033[0m"
+	dim := "\033[2m"
+	reset := "\033[0m"
+	bold := "\033[1m"
+	switch action {
+	case "add":
+		return fmt.Sprintf("  %s+%s %s%s%s: %s", bold, reset, dim, key, reset, after)
+	case "replace":
+		return fmt.Sprintf("  %s~%s %s%s%s: %s  %s  %s", bold, reset, dim, key, reset, before, arrow, after)
+	case "append":
+		return fmt.Sprintf("  %s~%s %s%s%s: %s  %s  %s", bold, reset, dim, key, reset, before, arrow, after)
+	default:
+		return fmt.Sprintf("  %s: %s  %s  %s", key, before, arrow, after)
+	}
+}
+
+// PreviewBodyFields formats body field changes as a compact diff.
+// Each changed field is shown as:
+//   field: original  →  new_value
+// or for arrays:
+//   field: original  →  [original, evil@attacker.com]
+func PreviewBodyFields(original map[string]any, modified map[string]any) string {
+	arrow := "\033[33m→\033[0m"
+	dim := "\033[2m"
+	reset := "\033[0m"
+	bold := "\033[1m"
+
+	var lines []string
+	for k, newVal := range modified {
+		origVal := anyToString(original[k])
+		var newStr string
+		if slice, ok := newVal.([]any); ok {
+			parts := make([]string, len(slice))
+			for i, e := range slice {
+				parts[i] = anyToString(e)
+			}
+			newStr = strings.Join(parts, ", ")
+		} else if m, ok := newVal.(map[string]any); ok {
+			b, _ := json.Marshal(m)
+			newStr = string(b)
+		} else {
+			newStr = anyToString(newVal)
+		}
+		if origVal == newStr {
+			continue // skip unchanged fields
+		}
+		lines = append(lines, fmt.Sprintf("  %s~%s %s%s%s: %s  %s  %s", bold, reset, dim, k, reset, origVal, arrow, newStr))
+	}
+	// Also show any brand-new keys that weren't in original
+	for k, newVal := range modified {
+		if _, existed := original[k]; !existed {
+			newStr := anyToString(newVal)
+			lines = append(lines, fmt.Sprintf("  %s+%s %s%s%s: %s", bold, reset, dim, k, reset, newStr))
+		}
+	}
+	if len(lines) == 0 {
+		return "  (no field changes)"
+	}
+	return strings.Join(lines, "\n")
+}
+// anyToString converts any field value to its string representation.
+// nil becomes an empty string (not "<nil>") for clean form/JSON encoding.
+func anyToString(v any) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%v", v)
+}
 
 func UpdateContentLength(req *ParsedRequest, body string) {
 	req.Headers["Content-Length"] = []string{strconv.Itoa(len(body))}

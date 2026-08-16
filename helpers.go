@@ -38,8 +38,9 @@ func RebuildBody(req ParsedRequest) string {
 // ── Preview helpers ───────────────────────────────────────────────────────────
 
 // PreviewHeader formats a header injection as:
-//   adding   X-Forwarded-Host: evil.com
-//   replacing  Host: original.com  →  Host: evil.com
+//
+//	adding   X-Forwarded-Host: evil.com
+//	replacing  Host: original.com  →  Host: evil.com
 func PreviewHeader(action, key, before, after string) string {
 	arrow := "\033[33m→\033[0m"
 	dim := "\033[2m"
@@ -59,9 +60,12 @@ func PreviewHeader(action, key, before, after string) string {
 
 // PreviewBodyFields formats body field changes as a compact diff.
 // Each changed field is shown as:
-//   field: original  →  new_value
+//
+//	field: original  →  new_value
+//
 // or for arrays:
-//   field: original  →  [original, evil@attacker.com]
+//
+//	field: original  →  [original, evil@attacker.com]
 func PreviewBodyFields(original map[string]any, modified map[string]any) string {
 	arrow := "\033[33m→\033[0m"
 	dim := "\033[2m"
@@ -101,6 +105,7 @@ func PreviewBodyFields(original map[string]any, modified map[string]any) string 
 	}
 	return strings.Join(lines, "\n")
 }
+
 // anyToString converts any field value to its string representation.
 // nil becomes an empty string (not "<nil>") for clean form/JSON encoding.
 func anyToString(v any) string {
@@ -124,11 +129,26 @@ func DeepCopyFields(fields map[string]any) map[string]any {
 	return cp
 }
 
+// DeepCopyHeaders returns a copy of the headers map (including each value slice)
+// so header payloads cannot bleed their injected headers into subsequent payloads.
+func DeepCopyHeaders(headers map[string][]string) map[string][]string {
+	cp := make(map[string][]string, len(headers))
+	for k, v := range headers {
+		vals := make([]string, len(v))
+		copy(vals, v)
+		cp[k] = vals
+	}
+	return cp
+}
+
 func FormatRequest(req ParsedRequest) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("%s %s %s\n", req.Method, req.Path, req.Proto))
 	sb.WriteString(fmt.Sprintf("Host: %s\n", req.Host))
 	for k, v := range req.Headers {
+		if strings.EqualFold(k, "Host") {
+			continue // Host is already rendered from req.Host
+		}
 		sb.WriteString(fmt.Sprintf("%s: %s\n", k, strings.Join(v, ", ")))
 	}
 	sb.WriteString(fmt.Sprintf("\n%s", req.Body))

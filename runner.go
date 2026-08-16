@@ -23,10 +23,11 @@ func RunInteractive(req ParsedRequest, attackerDomain, attackerEmail string, pay
 	noImpact := 0
 
 	for i, payload := range payloads {
-		// Copy fields before each Apply so mutations in one payload
+		// Copy the request before each Apply so mutations in one payload
 		// don't bleed into subsequent payloads (maps are reference types).
 		reqCopy := req
 		reqCopy.Fields = DeepCopyFields(req.Fields)
+		reqCopy.Headers = DeepCopyHeaders(req.Headers)
 		modified := payload.Apply(reqCopy, attackerDomain, attackerEmail)
 
 		printBanner()

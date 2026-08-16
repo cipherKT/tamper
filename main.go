@@ -52,7 +52,7 @@ func main() {
 	}
 	fmt.Println()
 
-	filtered := filterPayloads(*mode)
+	filtered := filterPayloads(*mode, req)
 	if len(filtered) == 0 {
 		fmt.Println(" no payloads matched selected mode")
 		os.Exit(1)
@@ -69,9 +69,18 @@ func main() {
 	RunInteractive(req, *attackerDomain, *attackerEmail, filtered, *verbose)
 }
 
-func filterPayloads(mode int) []Payload {
+func filterPayloads(mode int, req ParsedRequest) []Payload {
 	var result []Payload
 	for _, p := range Payloads {
+		// Skip payloads that require a specific body type the request doesn't have
+		if p.Requires != "" && p.Requires != req.BodyType {
+			continue
+		}
+		// Skip payloads that gate on request contents (e.g. a redirect field must
+		// already exist before we bother updating it)
+		if p.ShouldRun != nil && !p.ShouldRun(req) {
+			continue
+		}
 		switch mode {
 		case 1:
 			if p.Mode == "header" {

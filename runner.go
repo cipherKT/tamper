@@ -23,7 +23,11 @@ func RunInteractive(req ParsedRequest, attackerDomain, attackerEmail string, pay
 	noImpact := 0
 
 	for i, payload := range payloads {
-		modified := payload.Apply(req, attackerDomain, attackerEmail)
+		// Copy fields before each Apply so mutations in one payload
+		// don't bleed into subsequent payloads (maps are reference types).
+		reqCopy := req
+		reqCopy.Fields = DeepCopyFields(req.Fields)
+		modified := payload.Apply(reqCopy, attackerDomain, attackerEmail)
 
 		printBanner()
 		fmt.Printf(" Target  : %s %s://%s%s\n", req.Method, req.Scheme, req.Host, req.Path)

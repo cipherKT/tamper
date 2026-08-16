@@ -19,7 +19,15 @@ func RebuildBody(req ParsedRequest) string {
 	case "form":
 		values := url.Values{}
 		for k, v := range req.Fields {
-			values.Set(k, fmt.Sprintf("%v", v))
+			// If the value is a slice (e.g. from Array injection), encode each
+			// element as a separate key=value pair instead of stringifying the slice.
+			if slice, ok := v.([]any); ok {
+				for _, elem := range slice {
+					values.Add(k, fmt.Sprintf("%v", elem))
+				}
+			} else {
+				values.Set(k, fmt.Sprintf("%v", v))
+			}
 		}
 		return values.Encode()
 	default:
@@ -27,8 +35,19 @@ func RebuildBody(req ParsedRequest) string {
 	}
 }
 
+
 func UpdateContentLength(req *ParsedRequest, body string) {
 	req.Headers["Content-Length"] = []string{strconv.Itoa(len(body))}
+}
+
+// DeepCopyFields returns a copy of the fields map so each payload Apply
+// receives the original values and cannot bleed mutations into subsequent payloads.
+func DeepCopyFields(fields map[string]any) map[string]any {
+	cp := make(map[string]any, len(fields))
+	for k, v := range fields {
+		cp[k] = v
+	}
+	return cp
 }
 
 func FormatRequest(req ParsedRequest) string {

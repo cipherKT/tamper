@@ -61,7 +61,7 @@ func ParseRequestFile(path string) (ParsedRequest, error) {
 	parsedRequest.Method = req.Method
 	parsedRequest.Scheme = "https"
 	parsedRequest.Host = req.Host
-	parsedRequest.Path = req.URL.Path
+	parsedRequest.Path = req.URL.RequestURI()
 	parsedRequest.Proto = proto
 	parsedRequest.Headers = req.Header
 

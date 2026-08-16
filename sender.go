@@ -23,12 +23,12 @@ var h2Transport = &http2.Transport{
 // h1Transport is the default HTTP/1.1 transport.
 var h1Transport = http.DefaultTransport
 
-func SendRequest(req ParsedRequest) (int, string, error) {
+func SendRequest(req ParsedRequest) (int, http.Header, string, error) {
 	fullURL := req.Scheme + "://" + req.Host + req.Path
 
 	httpReq, err := http.NewRequest(req.Method, fullURL, strings.NewReader(req.Body))
 	if err != nil {
-		return 0, "", fmt.Errorf("building request: %w", err)
+		return 0, nil, "", fmt.Errorf("building request: %w", err)
 	}
 
 	for k, vals := range req.Headers {
@@ -52,7 +52,7 @@ func SendRequest(req ParsedRequest) (int, string, error) {
 	client := &http.Client{Transport: transport}
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return 0, "", fmt.Errorf("sending request: %w", err)
+		return 0, nil, "", fmt.Errorf("sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -62,10 +62,10 @@ func SendRequest(req ParsedRequest) (int, string, error) {
 	// that cause the server to send compressed responses.
 	body, err := decompressBody(resp)
 	if err != nil {
-		return 0, "", fmt.Errorf("reading response: %w", err)
+		return 0, nil, "", fmt.Errorf("reading response: %w", err)
 	}
 
-	return resp.StatusCode, string(body), nil
+	return resp.StatusCode, resp.Header, string(body), nil
 }
 
 // decompressBody reads the response body and decompresses it

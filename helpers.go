@@ -45,3 +45,48 @@ func FormatRequest(req ParsedRequest) string {
 func PrintRequest(req ParsedRequest) {
 	fmt.Println(FormatRequest(req))
 }
+
+// colorStatus wraps a status code in ANSI color:
+//   - 2xx → green
+//   - 3xx → yellow
+//   - 4xx/5xx → red
+func colorStatus(code int) string {
+	s := strconv.Itoa(code)
+	switch {
+	case code >= 200 && code < 300:
+		return "\033[32m" + s + "\033[0m" // green
+	case code >= 300 && code < 400:
+		return "\033[33m" + s + "\033[0m" // yellow
+	default:
+		return "\033[31m" + s + "\033[0m" // red
+	}
+}
+
+// drawProgress renders a visual progress bar line, e.g.:
+//
+//	━━━━━━━━━━━━━━━━━━━━━━░░░░░░░░░░  [7 / 30]  23 remaining
+func drawProgress(current, total int) string {
+	const width = 30
+	filled := 0
+	if total > 0 {
+		filled = current * width / total
+	}
+	bar := strings.Repeat("━", filled) + strings.Repeat("░", width-filled)
+	remaining := total - current
+	return fmt.Sprintf(" %s  [%d / %d]  %d remaining", bar, current, total, remaining)
+}
+
+// InjectValue returns the appropriate attacker value for a body field key.
+// If the key looks like an email field and attackerEmail is set, it returns attackerEmail.
+// Otherwise it falls back to "evil@<attackerDomain>".
+func InjectValue(key, attackerEmail, attackerDomain string) string {
+	k := strings.ToLower(key)
+	if attackerEmail != "" && (strings.Contains(k, "email") || strings.Contains(k, "mail")) {
+		return attackerEmail
+	}
+	if attackerEmail != "" {
+		return attackerEmail
+	}
+	return "evil@" + attackerDomain
+}
+

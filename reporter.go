@@ -9,6 +9,7 @@ import (
 type Entry struct {
 	Index        int
 	PayloadName  string
+	Description  string
 	Mode         string
 	FullRequest  string
 	StatusCode   int
@@ -47,7 +48,7 @@ func (r *Reporter) AppendEntry(e Entry) error {
 	fmt.Fprintf(r.file, "## Payload %d — %s\n", e.Index, e.PayloadName)
 	fmt.Fprintf(r.file, "**Result:** %s %s\n", icon, e.Result)
 	fmt.Fprintf(r.file, "**Mode:** %s\n", e.Mode)
-	fmt.Fprintf(r.file, "**Description:** %s\n\n", e.PayloadName)
+	fmt.Fprintf(r.file, "**Description:** %s\n\n", e.Description)
 	fmt.Fprintf(r.file, "**Request:**\n```http\n%s\n```\n\n", e.FullRequest)
 	fmt.Fprintf(r.file, "**Response:** %d\n```\n%s\n```\n\n", e.StatusCode, e.ResponseBody)
 	fmt.Fprintf(r.file, "**Notes:** %s\n\n---\n\n", e.Notes)
